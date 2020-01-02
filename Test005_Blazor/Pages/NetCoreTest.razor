@@ -1,0 +1,128 @@
+﻿@page "/netcoretest"
+
+@using Test005_Blazor.Data
+@inject TodoItemService TodoService
+
+<h1>Net Core Test</h1>
+<p>This component demonstrates connect to web-API on ASP NET Core.</p>
+
+<div style="margin-top: 4px">
+    <label for="userEmail">Email:</label>
+    <p class="text-primary" id="userEmail" style="display:inline-block">@userEmail</p>
+</div>
+
+<div style="margin-top: 4px">
+    <label for="userPassword">Password:</label>
+    <p class="text-primary" id="userPassword" style="display:inline-block">@userPassword</p>
+</div>
+
+<div style="margin-top: 4px">
+    <label for="connectionAuthenticationString">Authentication string:</label>
+    <p class="text-primary" id="connectionAuthenticationString" style="display:inline-block">@connectionAuthenticationString</p>
+</div>
+<div style="margin-top: 4px">
+    <label for="connectionAPIString">API string:</label>
+    <p class="text-primary" id="connectionAPIString" style="display:inline-block">@connectionAPIString</p>
+</div>
+
+
+<div class="form-group shadow-textarea">
+    <label for="exampleFormControlTextarea6">Token:</label>
+    <textarea class="form-control z-depth-1" id="exampleFormControlTextarea6" rows="3" placeholder="Write something here...">@tokenString</textarea>
+</div>
+
+
+<button class="btn btn-primary" @onclick="GetToken">Get Token</button>
+
+<button class="btn btn-primary" @onclick="GetTasksList">Get Tasks list</button>
+
+<p></p>
+<p></p>
+
+@if (todoItemsCollection == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>IsComplete</th>
+                <th>UserId</th>
+                <th>CreationDate</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var todoItem in todoItemsCollection)
+            {
+                <tr>
+                    <td>@todoItem.Id</td>
+                    <td>@todoItem.Name</td>
+                    <td>@todoItem.Description</td>
+                    <td>@todoItem.IsComplete</td>
+                    <td>@todoItem.UserId</td>
+                    <td>@todoItem.CreationDate.ToShortDateString()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<p></p>
+<p></p>
+
+<EditForm Model="@newTodoItem">
+    <p>New Todo:</p>
+    <div>
+        <p style="display:inline-block; float: left; margin: 12px">
+            <label for="name">Name: </label>
+            <InputText id="Name" @bind-Value="newTodoItem.Name" />
+        </p>
+        <p> </p>
+        <p style="display:inline-block; float: left; margin: 12px">
+            <label for="description">Description (optional): </label>
+            <InputText id="description" @bind-Value="newTodoItem.Description" />
+        </p>
+        <p> </p>
+        <button class="btn btn-primary" @onclick="AddNewTodoItem" style="margin: 12px">Add new Todo</button>
+    </div>
+</EditForm>
+
+@code {
+
+    private async void GetToken()
+    {
+        tokenString = await TodoService.GetTokenAsync(userEmail, userPassword, connectionAuthenticationString);
+        this.StateHasChanged(); // оповестить форму об изменениях
+    }
+
+    private async void GetTasksList()
+    {
+        todoItemsCollection = await TodoService.GetTasksListUsingTokenAsync(connectionAPIString, tokenString);
+        this.StateHasChanged(); // оповестить форму об изменениях
+    }
+
+    private async void AddNewTodoItem()
+    {
+        todoItemsCollection = await TodoService.AddNewTodoItemUsingTokenAsync(connectionAPIString, tokenString, newTodoItem.Name, newTodoItem.Description);
+        this.StateHasChanged(); // оповестить форму об изменениях
+    }
+
+
+    // Свойства - ВНИМАНИЕ! ИЗМЕНИТЬ ПАРАМЕТРЫ НА СВОИ !!!
+    private string userEmail = "123@mail.ru";
+    private string userPassword = "Password@123";
+    private string connectionAuthenticationString = "https://localhost:44368/api/AuthJWT";  // путь к API для авторизации и получения токена
+    private string connectionAPIString = "https://localhost:44368/api/TodoItemsAPI";   // путь к API для работы с задачами
+    private string tokenString = "";
+
+    // Список задач
+    private List<TodoItem> todoItemsCollection;
+
+    // Новая задача
+    private TodoItem newTodoItem = new TodoItem();
+}
